@@ -696,3 +696,53 @@ function checkbox_sanityCheckML_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of checkbox_sanityCheckML
+
+% --- Executes on button press in magicbutton.
+function magicbutton_Callback(hObject, eventdata, handles)
+num = get(handles.listbox_movie,'Value');
+if num~=1,
+    errordlg('Please load only one movie.');
+    return;
+end
+contentlist = get(handles.listbox_movie,'String') ; 
+dat=load(contentlist{1});
+dirnam=regexprep(dat.MD.movieDataPath_,"\/[^\/]+$","");
+movieDataFileName_tif=replace(dat.MD.movieDataFileName_,".mat",".tif");
+files=dir(strcat(dirnam,"/*.tif"));
+ud = get(handles.figure1, 'UserData');
+for i=1:length(files)
+    if ~strcmp(movieDataFileName_tif, files(i).name)
+        file_i_bn=replace(files(i).name,".tif","");
+ 
+        MD = MovieData([strcat(files(i).folder,'/') files(i).name], true, 'askUser', false, 'outputDirectory', strcat(dirnam,'/',file_i_bn));
+        MD.channels_.imageType_=dat.MD.channels_.imageType_;
+        MD.channels_.fluorophore_=dat.MD.channels_.fluorophore_;
+        MD.channels_.emissionWavelength_=dat.MD.channels_.emissionWavelength_;
+        MD.numAperture_=dat.MD.numAperture_;
+        MD.save();
+ 
+        % Refresh movie box in movie selector panel
+        ud.MD = horzcat(ud.MD, MD);
+        set(handles.figure1, 'UserData', ud);
+        refreshDisplay(hObject,eventdata,handles);
+    end
+end
+
+
+% --------------------------------------------------------------------
+function menu_tools_crop_all_Callback(hObject, eventdata, handles)
+contentlist = get(handles.listbox_movie,'String') ; 
+ud = get(handles.figure1, 'UserData');
+for i=1:length(contentlist)
+    dat = load(contentlist{i});
+    cropROI=[1 1 dat.MD.imSize_(end:-1:1)];
+    dat.MD = cropMovie(dat.MD,dat.MD.outputDirectory_,'cropROI',cropROI,'cropTOI',1:dat.MD.nFrames_);
+    dat.MD.save();
+
+    % Refresh movie box in movie selector panel
+    ud.MD = horzcat(ud.MD, dat.MD);
+    set(handles.figure1, 'UserData', ud);
+    refreshDisplay(hObject,eventdata,handles);
+end
+
+
