@@ -701,20 +701,29 @@ function checkbox_sanityCheckML_Callback(hObject, eventdata, handles)
 function magicbutton_Callback(hObject, eventdata, handles)
 num = get(handles.listbox_movie,'Value');
 if num~=1,
-    errordlg('Please load only one movie.');
+    errordlg('Please load only one movie. This function will load all other tif files from the directory of the first entry. The following properties are copied from the first entry: channels_.imageType_, channels_.fluorophore_, emissionWavelength_, numAperture_');
     return;
 end
-contentlist = get(handles.listbox_movie,'String') ; 
-dat=load(contentlist{1});
-dirnam=regexprep(dat.MD.movieDataPath_,"\/[^\/]+$","");
-movieDataFileName_tif=replace(dat.MD.movieDataFileName_,".mat",".tif");
-files=dir(strcat(dirnam,"/*.tif"));
+% Create log message
+if feature('ShowFigureWindows')
+    wtBar = waitbar(0,'Initializing');
+    logMsg = @(chan) ['Please wait, cropping images for channel ' num2str(chan)];
+    timeMsg = @(t) ['\nEstimated time remaining: ' num2str(round(t)) 's'];
+    tic;
+end
+contentlist = get(handles.listbox_movie, 'String');
+dat = load(contentlist{1});
+[dirnam,filenam,~] = fileparts(dat.MD.movieDataPath_);
+movieDataFileName_tif = fullfile(dirnam,filenam,'.tif');
+files = dir(fullfile(dirnam, '*.tif'));
 ud = get(handles.figure1, 'UserData');
-for i=1:length(files)
+for i = 1:length(files)
     if ~strcmp(movieDataFileName_tif, files(i).name)
-        file_i_bn=replace(files(i).name,".tif","");
- 
-        MD = MovieData([strcat(files(i).folder,'/') files(i).name], true, 'askUser', false, 'outputDirectory', strcat(dirnam,'/',file_i_bn));
+        tj=toc;
+        waitbar(i/length(files),wtBar,sprintf([logMsg(i) timeMsg(tj*length(files)/i-tj)]));
+
+        [~,file_i_bn,~] = fileparts(files(i).name);
+        MD = MovieData(fullfile(dirnam,files(i).name), true, 'askUser', false, 'outputDirectory', fullfile(dirnam,file_i_bn));
         MD.channels_.imageType_=dat.MD.channels_.imageType_;
         MD.channels_.fluorophore_=dat.MD.channels_.fluorophore_;
         MD.channels_.emissionWavelength_=dat.MD.channels_.emissionWavelength_;
@@ -727,6 +736,7 @@ for i=1:length(files)
         refreshDisplay(hObject,eventdata,handles);
     end
 end
+if ishandle(wtBar), close(wtBar); end
 
 
 % --------------------------------------------------------------------
@@ -744,5 +754,3 @@ for i=1:length(contentlist)
     set(handles.figure1, 'UserData', ud);
     refreshDisplay(hObject,eventdata,handles);
 end
-
-
