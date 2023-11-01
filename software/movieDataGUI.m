@@ -415,12 +415,12 @@ function pushbutton_bfImport_Callback(hObject, eventdata, handles)
 assert(bfCheckJavaPath(), 'Could not load the Bio-Formats library');
 
 
-outputDir = get(handles.edit_output, 'String');
-if isempty(outputDir) || ~exist(outputDir, 'dir')
-    errordlg('Please provide a valid output path to save your results.', ...
-               'Empty Output Path', 'modal');
-    return;    
-end
+% outputDir = get(handles.edit_output, 'String');
+% if isempty(outputDir) || ~exist(outputDir, 'dir')
+%     errordlg('Please provide a valid output path to save your results.', ...
+%                'Empty Output Path', 'modal');
+%     return;    
+% end
 
 % Note: list of supported formats could be retrieved using
 % loci.formats.tools.PrintFormatTable class
